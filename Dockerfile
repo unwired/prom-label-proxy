@@ -1,11 +1,9 @@
-ARG ARCH="amd64"
-ARG OS="linux"
-FROM quay.io/prometheus/busybox-${OS}-${ARCH}:glibc
-LABEL maintainer="The Prometheus Authors <prometheus-developers@googlegroups.com>"
+FROM golang:1.21.6-alpine AS golang
+WORKDIR /go/src/github.com/unwired/prom-label-proxy
+COPY . .
+ENV CGO_ENABLED=0
+ENV GOPATH="/go/src/github.com/unwired"
 
-ARG ARCH="amd64"
-ARG OS="linux"
-COPY .build/${OS}-${ARCH}/prom-label-proxy /bin/prom-label-proxy
+RUN go test -timeout 30s -v ./...
 
-USER        nobody
 ENTRYPOINT  [ "/bin/prom-label-proxy" ]

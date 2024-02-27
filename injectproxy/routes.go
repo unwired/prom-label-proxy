@@ -447,6 +447,8 @@ func MustLabelValue(ctx context.Context) string {
 	return v[0]
 }
 
+// MustLabelName returns the label name previously stored using WithLabelName()
+// If there was no label name stored, it will panic.
 func MustLabelName(ctx context.Context) string {
 	label, ok := ctx.Value(keyLabelName).(string)
 	if !ok {
@@ -459,6 +461,7 @@ func MustLabelName(ctx context.Context) string {
 	return label
 }
 
+// MustLabelForceRegex returns the label force regex previously stored using WithForceRegexp()
 func MustLabelForceRegex(ctx context.Context) bool {
 	forceRegex, ok := ctx.Value(keyLabelForceRegex).(bool)
 	if !ok {

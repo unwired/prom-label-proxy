@@ -20,7 +20,7 @@ See [Prometheus Operator](https://github.com/prometheus-operator/prometheus-oper
 
 ### Helm
 
-See: https://github.com/prometheus-community/helm-charts/tree/main/charts/prom-label-proxy
+See: https://github.com/unwired/helm-charts/tree/main/charts/prom-label-proxy
 
 ### Docker
 
@@ -37,7 +37,7 @@ the [Go](https://golang.org/) 1.15+ [toolchain](https://github.com/golang/tools)
 `prom-label-proxy` can be downloaded and built by running:
 
 ```bash
-go get github.com/prometheus-community/prom-label-proxy
+go get github.com/unwired/prom-label-proxy
 ```
 
 ## How does this project work?

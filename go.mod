@@ -1,4 +1,4 @@
-module github.com/prometheus-community/prom-label-proxy
+module github.com/unwired/prom-label-proxy
 
 go 1.20
 

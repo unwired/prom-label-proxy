@@ -32,7 +32,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
-	"github.com/prometheus-community/prom-label-proxy/injectproxy"
+	"github.com/unwired/prom-label-proxy/injectproxy"
 )
 
 type arrayFlags []string

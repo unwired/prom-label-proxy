@@ -49,11 +49,12 @@ type routes struct {
 }
 
 type options struct {
-	enableLabelAPIs  bool
-	passthroughPaths []string
-	errorOnReplace   bool
-	registerer       prometheus.Registerer
-	regexMatch       bool
+	enableLabelAPIs    bool
+	passthroughPaths   []string
+	errorOnReplace     bool
+	registerer         prometheus.Registerer
+	regexMatch         bool
+	modifyProxyRequest func(*http.Request)
 }
 
 type Option interface {
@@ -101,6 +102,14 @@ func WithErrorOnReplace() Option {
 func WithRegexMatch() Option {
 	return optionFunc(func(o *options) {
 		o.regexMatch = true
+	})
+}
+
+// WithModifyProxyRequest allows to modify the proxy request before it is sent to the upstream.
+// can be used to add custom headers, like basic auth.
+func WithModifyProxyRequest(f func(*http.Request)) Option {
+	return optionFunc(func(o *options) {
+		o.modifyProxyRequest = f
 	})
 }
 
@@ -285,6 +294,14 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(upstream)
+
+	if opt.modifyProxyRequest != nil {
+		originalDirector := proxy.Director
+		proxy.Director = func(r *http.Request) {
+			opt.modifyProxyRequest(r)
+			originalDirector(r)
+		}
+	}
 
 	r := &routes{
 		upstream:       upstream,

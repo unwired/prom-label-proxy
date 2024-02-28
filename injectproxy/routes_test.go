@@ -655,6 +655,50 @@ func TestSeries(t *testing.T) {
 	}
 }
 
+// Test if WithModifyProxyRequest is working as expected
+// And can correctly set the Authorization header
+func TestRequestOverride(t *testing.T) {
+	m := newMockUpstream(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Check that the Authorization header is set.
+		authHeader := req.Header.Get("Authorization")
+
+		if authHeader != "Basic anytoken" {
+			t.Errorf("unexpected Authorization header: %q", authHeader)
+		}
+
+		w.Write(okResponse)
+	}))
+	defer m.Close()
+
+	modifyProxyRequest := func(req *http.Request) {
+		req.Header.Set("Authorization", "Basic anytoken")
+	}
+	r, err := NewRoutes(m.url, StaticLabelEnforcer{LabelName: proxyLabel, Values: []string{"default"}}, WithEnabledLabelsAPI(), WithModifyProxyRequest(modifyProxyRequest))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	w := httptest.NewRecorder()
+	u := "http://prometheus.example.com/api/v1/label/__name__/values"
+	req := httptest.NewRequest("GET", u, nil)
+
+	r.ServeHTTP(w, req)
+
+	resp := w.Result()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status code: %d", resp.StatusCode)
+	}
+	if string(body) != string(okResponse) {
+		t.Fatalf("unexpected response body: %q", string(body))
+	}
+}
+
 func TestSeriesWithPost(t *testing.T) {
 	for _, tc := range []struct {
 		name          string

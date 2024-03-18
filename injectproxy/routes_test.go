@@ -162,57 +162,57 @@ func TestWithPassthroughPaths(t *testing.T) {
 
 	t.Run("invalid passthrough options", func(t *testing.T) {
 		// Duplicated /api.
-		_, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/api1"}))
+		_, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/api1"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Wrong format, params in path.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1?args=1", "/api1"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1?args=1", "/api1"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// / is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/", "/api2/something", "/api1"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/", "/api2/something", "/api1"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// "" is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/some", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/some", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4 is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4/ is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4/something is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/something", "/api3"}))
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/something", "/api3"}), WithEnabledAlertsAPI())
 		if err == nil {
 			t.Fatal("expected error")
 		}
 	})
-	r, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/graph/"}))
+	r, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/graph/"}), WithEnabledAlertsAPI())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

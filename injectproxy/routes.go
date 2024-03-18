@@ -50,10 +50,12 @@ type routes struct {
 
 type options struct {
 	enableLabelAPIs    bool
+	enableAlertsAPI    bool
 	passthroughPaths   []string
 	errorOnReplace     bool
 	registerer         prometheus.Registerer
 	regexMatch         bool
+	pathPrefix         string
 	modifyProxyRequest func(*http.Request)
 }
 
@@ -71,6 +73,13 @@ func (f optionFunc) apply(o *options) {
 func WithPrometheusRegistry(reg prometheus.Registerer) Option {
 	return optionFunc(func(o *options) {
 		o.registerer = reg
+	})
+}
+
+// WithEnabledAlertsAPI enables proxying to Alerts API. If false, "501 Not implemented" will be return for those.
+func WithEnabledAlertsAPI() Option {
+	return optionFunc(func(o *options) {
+		o.enableAlertsAPI = true
 	})
 }
 
@@ -102,6 +111,12 @@ func WithErrorOnReplace() Option {
 func WithRegexMatch() Option {
 	return optionFunc(func(o *options) {
 		o.regexMatch = true
+	})
+}
+
+func WithPathPrefix(pathPrefix string) Option {
+	return optionFunc(func(o *options) {
+		o.pathPrefix = pathPrefix
 	})
 }
 
@@ -299,6 +314,11 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 		originalDirector := proxy.Director
 		proxy.Director = func(r *http.Request) {
 			opt.modifyProxyRequest(r)
+			if opt.pathPrefix != "" {
+				// compatibility with go1.22 removing the prefix from the path
+				reg := regexp.MustCompile(strings.Replace(opt.pathPrefix, "{customer_id}", "([a-zA-Z0-9_-]+)", -1))
+				r.URL.Path = reg.ReplaceAllString(r.URL.Path, "")
+			}
 			originalDirector(r)
 		}
 	}
@@ -313,46 +333,48 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 	mux := newStrictMux(newInstrumentedMux(http.NewServeMux(), opt.registerer))
 
 	errs := merrors.New(
-		mux.Handle("/federate", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
-		mux.Handle("/api/v1/query", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
-		mux.Handle("/api/v1/query_range", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
-		mux.Handle("/api/v1/alerts", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
-		mux.Handle("/api/v1/rules", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
-		mux.Handle("/api/v1/series", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
-		mux.Handle("/api/v1/query_exemplars", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle(opt.pathPrefix+"/federate", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
+		mux.Handle(opt.pathPrefix+"/api/v1/query", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle(opt.pathPrefix+"/api/v1/query_range", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
+		mux.Handle(opt.pathPrefix+"/api/v1/series", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
+		mux.Handle(opt.pathPrefix+"/api/v1/query_exemplars", r.el.ExtractLabel(enforceMethods(r.query, "GET", "POST"))),
 	)
 
 	if opt.enableLabelAPIs {
 		errs.Add(
-			mux.Handle("/api/v1/labels", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
+			mux.Handle(opt.pathPrefix+"/api/v1/labels", r.el.ExtractLabel(enforceMethods(r.matcher, "GET", "POST"))),
 			// Full path is /api/v1/label/<label_name>/values but http mux does not support patterns.
 			// This is fine though as we don't care about name for matcher injector.
-			mux.Handle("/api/v1/label/", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
+			mux.Handle(opt.pathPrefix+"/api/v1/label/", r.el.ExtractLabel(enforceMethods(r.matcher, "GET"))),
 		)
 	}
 
-	errs.Add(
-		// Reject multi label values with assertSingleLabelValue() because the
-		// semantics of the Silences API don't support multi-label matchers.
-		mux.Handle("/api/v2/silences", r.el.ExtractLabel(
-			r.errorIfRegexpMatch(
-				enforceMethods(
-					assertSingleLabelValue(r.silences),
-					"GET", "POST",
+	if opt.enableAlertsAPI {
+		errs.Add(
+			mux.Handle(opt.pathPrefix+"/api/v1/alerts", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
+			mux.Handle(opt.pathPrefix+"/api/v1/rules", r.el.ExtractLabel(enforceMethods(r.passthrough, "GET"))),
+			// Reject multi label values with assertSingleLabelValue() because the
+			// semantics of the Silences API don't support multi-label matchers.
+			mux.Handle(opt.pathPrefix+"/api/v2/silences", r.el.ExtractLabel(
+				r.errorIfRegexpMatch(
+					enforceMethods(
+						assertSingleLabelValue(r.silences),
+						"GET", "POST",
+					),
 				),
-			),
-		)),
-		mux.Handle("/api/v2/silence/", r.el.ExtractLabel(
-			r.errorIfRegexpMatch(
-				enforceMethods(
-					assertSingleLabelValue(r.deleteSilence),
-					"DELETE",
+			)),
+			mux.Handle(opt.pathPrefix+"/api/v2/silence/", r.el.ExtractLabel(
+				r.errorIfRegexpMatch(
+					enforceMethods(
+						assertSingleLabelValue(r.deleteSilence),
+						"DELETE",
+					),
 				),
-			),
-		)),
-		mux.Handle("/api/v2/alerts/groups", r.el.ExtractLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
-		mux.Handle("/api/v2/alerts", r.el.ExtractLabel(enforceMethods(r.alerts, "GET"))),
-	)
+			)),
+			mux.Handle(opt.pathPrefix+"/api/v2/alerts/groups", r.el.ExtractLabel(enforceMethods(r.enforceFilterParameter, "GET"))),
+			mux.Handle(opt.pathPrefix+"/api/v2/alerts", r.el.ExtractLabel(enforceMethods(r.alerts, "GET"))),
+		)
+	}
 
 	errs.Add(
 		mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -380,16 +402,19 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 
 	// Register optional passthrough paths.
 	for _, path := range opt.passthroughPaths {
-		if err := mux.Handle(path, http.HandlerFunc(r.passthrough)); err != nil {
+		if err := mux.Handle(opt.pathPrefix+path, http.HandlerFunc(r.passthrough)); err != nil {
 			return nil, err
 		}
 	}
 
 	r.mux = mux
-	r.modifiers = map[string]func(*http.Response) error{
-		"/api/v1/rules":  modifyAPIResponse(r.filterRules),
-		"/api/v1/alerts": modifyAPIResponse(r.filterAlerts),
+	if opt.enableAlertsAPI {
+		r.modifiers = map[string]func(*http.Response) error{
+			opt.pathPrefix + "/api/v1/rules":  modifyAPIResponse(r.filterRules),
+			opt.pathPrefix + "/api/v1/alerts": modifyAPIResponse(r.filterAlerts),
+		}
 	}
+
 	proxy.ModifyResponse = r.ModifyResponse
 	return r, nil
 }

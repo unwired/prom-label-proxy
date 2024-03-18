@@ -298,6 +298,8 @@ func (sle StaticLabelEnforcer) ExtractLabel(next http.HandlerFunc) http.Handler 
 	})
 }
 
+var regexPathParam = regexp.MustCompile("{[a-zA-Z0-9_-]+}")
+
 func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option) (*routes, error) {
 	opt := options{}
 	for _, o := range opts {
@@ -316,7 +318,9 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 			opt.modifyProxyRequest(r)
 			if opt.pathPrefix != "" {
 				// compatibility with go1.22 removing the prefix from the path
-				reg := regexp.MustCompile(strings.Replace(opt.pathPrefix, "{customer_id}", "([a-zA-Z0-9_-]+)", -1))
+
+				replacedPathPrefix := regexPathParam.ReplaceAllString(opt.pathPrefix, "([a-zA-Z0-9_-]+)")
+				reg := regexp.MustCompile(replacedPathPrefix)
 				r.URL.Path = reg.ReplaceAllString(r.URL.Path, "")
 			}
 			originalDirector(r)

@@ -675,28 +675,41 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 		Value: labelValuesToRegexpString(MustLabelValues(req.Context()), MustLabelForceRegex(req.Context())),
 	}
 
-	q := req.URL.Query()
-	if err := injectMatcher(q, matcher); err != nil {
-		return
-	}
+	// If we have a POST request, we need to inject the label only into the POST body.
+	// It should not be injected into the URL query string, because it will be incomplete
+	// as it might be interpreted differently by the upstream server.
+	// This causes e.g. the /series endpoint to return all series, instead of the filtered series.
+	// Code was taken from:
+	// https://github.com/prometheus-community/prom-label-proxy/pull/111
+	// https://github.com/h-otter/prom-label-proxy/tree/a37a998
+	// If the referenced pull request is merged, we can remove this code.
 
-	req.URL.RawQuery = q.Encode()
+	var query url.Values = req.URL.Query()
+	var form url.Values
+
 	if req.Method == http.MethodPost {
 		if err := req.ParseForm(); err != nil {
 			return
 		}
 
-		q = req.PostForm
-		if err := injectMatcher(q, matcher); err != nil {
+		form = req.PostForm
+		if err := injectMatcher(form, matcher); err != nil {
 			return
 		}
 
 		// We are replacing request body, close previous one (ParseForm ensures it is read fully and not nil).
 		_ = req.Body.Close()
-		newBody := q.Encode()
+		newBody := form.Encode()
 		req.Body = io.NopCloser(strings.NewReader(newBody))
 		req.ContentLength = int64(len(newBody))
 	}
+
+	if len(query) > 0 || len(form) == 0 {
+		if err := injectMatcher(query, matcher); err != nil {
+			return
+		}
+	}
+	req.URL.RawQuery = query.Encode()
 
 	r.handler.ServeHTTP(w, req)
 }

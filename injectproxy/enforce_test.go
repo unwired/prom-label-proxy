@@ -54,15 +54,6 @@ func hasError(want error) checkFunc {
 	}
 }
 
-func hasIllegalLabelMatcherError() checkFunc {
-	return func(_ string, got error) error {
-		if _, ok := got.(IllegalLabelMatcherError); ok {
-			return nil
-		}
-		return fmt.Errorf("want error of type IllegalLabelMatcherError, got %v", got)
-	}
-}
-
 func hasExpression(want string) checkFunc {
 	return func(got string, _ error) error {
 		if want != got {
@@ -83,7 +74,6 @@ var tests = []struct {
 		name:       "expressions add label",
 		expression: `round(metric1{label="baz"},3)`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -105,7 +95,6 @@ var tests = []struct {
 		name:       "aggregate add label",
 		expression: `sum by (pod) (metric1{label="baz"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -127,7 +116,6 @@ var tests = []struct {
 		name:       "binary expression add label",
 		expression: `metric1{} + sum by (pod) (metric2{label="baz"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -149,7 +137,6 @@ var tests = []struct {
 		name:       "binary expression with vector matching add label",
 		expression: `metric1{} + on(pod,namespace) sum by (pod) (metric2{label="baz"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -169,10 +156,9 @@ var tests = []struct {
 	// then check error return when a query would be silently altered, i.e. a label
 	// matcher would be changed
 	{
-		name:       "expressions error on non-matching label value",
+		name:       "expressions adds label on non-matching label value",
 		expression: `round(metric1{label="baz",pod="POD",namespace="bar"},3)`,
 		enforcer: NewEnforcer(
-			true,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -185,15 +171,15 @@ var tests = []struct {
 			},
 		),
 		check: checks(
-			hasIllegalLabelMatcherError(),
+			hasError(nil),
+			hasExpression(`round(metric1{label="baz",namespace="NS",namespace="bar",pod="POD"}, 3)`),
 		),
 	},
 
 	{
-		name:       "aggregate error on non-matching label value",
+		name:       "aggregate on non-matching label value",
 		expression: `sum by (pod) (metric1{label="baz",pod="foo",namespace="bar"})`,
 		enforcer: NewEnforcer(
-			true,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -206,15 +192,15 @@ var tests = []struct {
 			},
 		),
 		check: checks(
-			hasIllegalLabelMatcherError(),
+			hasError(nil),
+			hasExpression(`sum by (pod) (metric1{label="baz",namespace="NS",namespace="bar",pod="POD",pod="foo"})`),
 		),
 	},
 
 	{
-		name:       "binary expression error on non-matching label value",
+		name:       "binary expression adds on non-matching label value",
 		expression: `metric1{pod="baz"} + sum by (pod) (metric2{label="baz",pod="foo",namespace="bar"})`,
 		enforcer: NewEnforcer(
-			true,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -227,15 +213,15 @@ var tests = []struct {
 			},
 		),
 		check: checks(
-			hasIllegalLabelMatcherError(),
+			hasError(nil),
+			hasExpression(`metric1{namespace="NS",pod="POD",pod="baz"} + sum by (pod) (metric2{label="baz",namespace="NS",namespace="bar",pod="POD",pod="foo"})`),
 		),
 	},
 
 	{
-		name:       "binary expression with vector matching error on non-matching label value",
+		name:       "binary expression with vector matching adds labels on non-matching label value",
 		expression: `metric1{pod="baz"} + on (pod,namespace) sum by (pod) (metric2{label="baz",pod="foo",namespace="bar"})`,
 		enforcer: NewEnforcer(
-			true,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -248,7 +234,8 @@ var tests = []struct {
 			},
 		),
 		check: checks(
-			hasIllegalLabelMatcherError(),
+			hasError(nil),
+			hasExpression(`metric1{namespace="NS",pod="POD",pod="baz"} + on (pod, namespace) sum by (pod) (metric2{label="baz",namespace="NS",namespace="bar",pod="POD",pod="foo"})`),
 		),
 	},
 	// and lastly check that passing the label matcher we would inject
@@ -257,7 +244,6 @@ var tests = []struct {
 		name:       "expressions unchanged with matching label value",
 		expression: `round(metric1{label="baz",pod="POD",namespace="NS"},3)`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -278,7 +264,6 @@ var tests = []struct {
 		name:       "aggregate unchanged with matching label value",
 		expression: `sum by (pod) (metric1{label="baz",pod="POD",namespace="NS"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -299,7 +284,6 @@ var tests = []struct {
 		name:       "binary expression unchanged with matching label value",
 		expression: `metric1{pod="POD"} + sum by (pod) (metric2{label="baz",namespace="NS",pod="POD"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,
@@ -320,7 +304,6 @@ var tests = []struct {
 		name:       "binary expression with vector matching unchanged with matching label value",
 		expression: `metric1{pod="POD"} + on (pod,namespace) sum by (pod) (metric2{label="baz",pod="POD",namespace="NS"})`,
 		enforcer: NewEnforcer(
-			false,
 			&labels.Matcher{
 				Name:  "namespace",
 				Type:  labels.MatchEqual,

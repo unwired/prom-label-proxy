@@ -21,11 +21,10 @@ import (
 )
 
 type Enforcer struct {
-	labelMatchers  map[string]*labels.Matcher
-	errorOnReplace bool
+	labelMatchers map[string]*labels.Matcher
 }
 
-func NewEnforcer(errorOnReplace bool, ms ...*labels.Matcher) *Enforcer {
+func NewEnforcer(ms ...*labels.Matcher) *Enforcer {
 	entries := make(map[string]*labels.Matcher)
 
 	for _, matcher := range ms {
@@ -33,20 +32,7 @@ func NewEnforcer(errorOnReplace bool, ms ...*labels.Matcher) *Enforcer {
 	}
 
 	return &Enforcer{
-		labelMatchers:  entries,
-		errorOnReplace: errorOnReplace,
-	}
-}
-
-type IllegalLabelMatcherError struct {
-	msg string
-}
-
-func (e IllegalLabelMatcherError) Error() string { return e.msg }
-
-func newIllegalLabelMatcherError(existing string, replacement string) IllegalLabelMatcherError {
-	return IllegalLabelMatcherError{
-		msg: fmt.Sprintf("label matcher value (%s) conflicts with injected value (%s)", existing, replacement),
+		labelMatchers: entries,
 	}
 }
 
@@ -134,35 +120,22 @@ func (ms Enforcer) EnforceNode(node parser.Node) error {
 }
 
 // EnforceMatchers appends the configured label matcher if not present.
-// If the label matcher that is to be injected is present (by labelname) but
-// different (either by match type or value) the behavior depends on the
-// errorOnReplace variable and the enforced matcher(s):
-// * if errorOnReplace is true, an error is returned,
-// * if errorOnReplace is false and the label matcher type is '=', the existing matcher is silently replaced.
-// * otherwise the existing matcher is preserved.
+// If the label matcher that is to be injected is present (by labelname)
+// it will be preserved.
 func (ms Enforcer) EnforceMatchers(targets []*labels.Matcher) ([]*labels.Matcher, error) {
 	var res []*labels.Matcher
-
 	for _, target := range targets {
 		if matcher, ok := ms.labelMatchers[target.Name]; ok {
-			// matcher.String() returns something like "labelfoo=value"
-			if ms.errorOnReplace && matcher.String() != target.String() {
-				return res, newIllegalLabelMatcherError(matcher.String(), target.String())
-			}
 
-			// Drop the existing matcher only if the enforced matcher is an
-			// equal matcher.
-			if matcher.Type == labels.MatchEqual {
+			// if the exact same matcher exists already, do not append it
+			if matcher.String() == target.String() {
 				continue
 			}
 		}
-
 		res = append(res, target)
 	}
-
 	for _, enforcedMatcher := range ms.labelMatchers {
 		res = append(res, enforcedMatcher)
 	}
-
 	return res, nil
 }

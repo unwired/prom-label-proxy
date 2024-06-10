@@ -162,57 +162,57 @@ func TestWithPassthroughPaths(t *testing.T) {
 
 	t.Run("invalid passthrough options", func(t *testing.T) {
 		// Duplicated /api.
-		_, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/api1"}), WithEnabledAlertsAPI())
+		_, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/api1"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Wrong format, params in path.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1?args=1", "/api1"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1?args=1", "/api1"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// / is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/", "/api2/something", "/api1"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/", "/api2/something", "/api1"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// "" is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// Duplication with existing enforced path is not allowed.
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/some", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/federate/some", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4 is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4/ is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 		// api4/something is not valid URL path (does not start with /)
-		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/something", "/api3"}), WithEnabledAlertsAPI())
+		_, err = NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "api4/something", "/api3"}))
 		if err == nil {
 			t.Fatal("expected error")
 		}
 	})
-	r, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/graph/"}), WithEnabledAlertsAPI())
+	r, err := NewRoutes(m.url, HTTPFormEnforcer{ParameterName: proxyLabel, LabelName: proxyLabel}, WithPassthroughPaths([]string{"/api1", "/api2/something", "/graph/"}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -236,7 +236,7 @@ func TestWithPassthroughPaths(t *testing.T) {
 		},
 		{
 			url: "http://prometheus.example.com/api/v2/silence", method: http.MethodGet,
-			expCode: http.StatusBadRequest, // Missing label to inject.
+			expCode: http.StatusNotFound, // We removed the silence handling
 		},
 		{
 			url: "http://prometheus.example.com/api1?yolo=ns1", method: http.MethodGet,
@@ -856,8 +856,6 @@ func TestQuery(t *testing.T) {
 		expPromQuery     string
 		expPromQueryBody string
 		expResponse      []byte
-		errorOnReplace   bool
-		regexMatch       bool
 	}{
 		{
 			name:    `No "namespace" parameter returns an error`,
@@ -920,6 +918,14 @@ func TestQuery(t *testing.T) {
 			promQuery:    "up",
 			expCode:      http.StatusOK,
 			expPromQuery: `up{namespace=~"default|second"}`,
+			expResponse:  okResponse,
+		},
+		{
+			name:         `Query without a name matcher`,
+			labelv:       []string{"default"},
+			promQuery:    `{instance="localhost:9090"}`,
+			expCode:      http.StatusOK,
+			expPromQuery: `{instance="localhost:9090",namespace="default"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -997,7 +1003,7 @@ func TestQuery(t *testing.T) {
 			labelv:       []string{"default"},
 			promQuery:    `up{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{namespace="default"}`,
+			expPromQuery: `up{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -1013,7 +1019,7 @@ func TestQuery(t *testing.T) {
 			labelv:       []string{"default", ""},
 			promQuery:    `up{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{namespace="default"}`,
+			expPromQuery: `up{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -1022,7 +1028,7 @@ func TestQuery(t *testing.T) {
 			promQueryBody:    `up{namespace="other"}`,
 			method:           http.MethodPost,
 			expCode:          http.StatusOK,
-			expPromQueryBody: `up{namespace="default"}`,
+			expPromQueryBody: `up{namespace="default",namespace="other"}`,
 			expResponse:      okResponse,
 		},
 		{
@@ -1033,23 +1039,6 @@ func TestQuery(t *testing.T) {
 			expCode:          http.StatusOK,
 			expPromQueryBody: `up{namespace="second",namespace=~"default|second"}`,
 			expResponse:      okResponse,
-		},
-		{
-			name:           `Query with a vector selector and errorOnReplace`,
-			labelv:         []string{"default"},
-			promQuery:      `up{namespace="other"}`,
-			errorOnReplace: true,
-			expCode:        http.StatusBadRequest,
-			expResponse:    nil,
-		},
-		{
-			name:           `Query with a vector selector in POST body and errorOnReplace`,
-			labelv:         []string{"default"},
-			promQueryBody:  `up{namespace="other"}`,
-			method:         http.MethodPost,
-			errorOnReplace: true,
-			expCode:        http.StatusBadRequest,
-			expResponse:    nil,
 		},
 		{
 			name:         `Query with a scalar`,
@@ -1103,7 +1092,7 @@ func TestQuery(t *testing.T) {
 			labelv:       []string{"default"},
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -1136,7 +1125,7 @@ func TestQuery(t *testing.T) {
 			headerName:   "namespace",
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -1154,7 +1143,7 @@ func TestQuery(t *testing.T) {
 			headerName:   "namespace",
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
@@ -1163,62 +1152,62 @@ func TestQuery(t *testing.T) {
 			labelv:       []string{"default"},
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="default"} + foo{namespace="default",namespace="other"}`,
 			expResponse:  okResponse,
 		},
 		{
 			name:         `HTTP header as regexp`,
 			headers:      http.Header{"namespace": []string{"tenant1-.*"}},
 			headerName:   "namespace",
-			regexMatch:   true,
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace=~"tenant1-.*"} + foo{namespace="other",namespace=~"tenant1-.*"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="tenant1-.*"} + foo{namespace="other",namespace="tenant1-.*"}`,
+			expResponse:  okResponse,
+		},
+		{
+			name:         `HTTP header as multiple regexp`,
+			headers:      http.Header{"namespace": []string{"tenant1-.*", "tenant2-.*"}},
+			headerName:   "namespace",
+			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
+			expCode:      http.StatusOK,
+			expPromQuery: `up{instance="localhost:9090",namespace=~"tenant1-\\.\\*|tenant2-\\.\\*"} + foo{namespace="other",namespace=~"tenant1-\\.\\*|tenant2-\\.\\*"}`,
 			expResponse:  okResponse,
 		},
 		{
 			name:         `query param as regexp`,
 			queryParam:   "namespace",
 			labelv:       []string{"tenant1-.*"},
-			regexMatch:   true,
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="other"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace=~"tenant1-.*"} + foo{namespace="other",namespace=~"tenant1-.*"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="tenant1-.*"} + foo{namespace="other",namespace="tenant1-.*"}`,
 			expResponse:  okResponse,
 		},
 		{
 			name:         `HTTP header as regexp with same regexp in query`,
 			headers:      http.Header{"namespace": []string{"tenant1-.*"}},
 			headerName:   "namespace",
-			regexMatch:   true,
 			promQuery:    `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`,
 			expCode:      http.StatusOK,
-			expPromQuery: `up{instance="localhost:9090",namespace=~"tenant1-.*"} + foo{namespace="tenant1-.*",namespace=~"tenant1-.*"}`,
+			expPromQuery: `up{instance="localhost:9090",namespace="tenant1-.*"} + foo{namespace="tenant1-.*"}`,
 			expResponse:  okResponse,
 		},
 		{
-			name:       `HTTP header with invalid regexp with same regexp in query`,
-			headers:    http.Header{"namespace": []string{"tenant1-(.*"}},
-			headerName: "namespace",
-			regexMatch: true,
-			promQuery:  `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`,
-			expCode:    http.StatusBadRequest,
+			name:         `HTTP header with invalid regexp with same regexp in query`,
+			headers:      http.Header{"namespace": []string{"tenant1-(.*"}},
+			headerName:   "namespace",
+			promQuery:    `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`,
+			expCode:      http.StatusOK,
+			expPromQuery: `up{instance="localhost:9090",namespace="tenant1-(.*"} + foo{namespace="tenant1-(.*",namespace="tenant1-.*"}`,
+			expResponse:  okResponse,
 		},
 		{
-			name:       `Multiple regexp HTTP headers is invalid`,
-			headers:    http.Header{"namespace": []string{"tenant1", "tenant2"}},
-			headerName: "namespace",
-			regexMatch: true,
-			promQuery:  `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`,
-			expCode:    http.StatusBadRequest,
-		},
-		{
-			name:       `Regex should not match empty string`,
-			headers:    http.Header{"namespace": []string{".*"}},
-			headerName: "namespace",
-			regexMatch: true,
-			promQuery:  `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`,
-			expCode:    http.StatusBadRequest,
+			name:         `Regex should not match empty string`,
+			headers:      http.Header{"namespace": []string{".*"}},
+			headerName:   "namespace",
+			promQuery:    `up{instance="localhost:9090"} + foo{namespace="tenant1-.*"}`, // Note it's not a regex matcher
+			expCode:      http.StatusOK,
+			expPromQuery: `up{instance="localhost:9090",namespace=".*"} + foo{namespace=".*",namespace="tenant1-.*"}`,
+			expResponse:  okResponse,
 		},
 	} {
 		for _, endpoint := range []string{"query", "query_range", "query_exemplars"} {
@@ -1235,13 +1224,6 @@ func TestQuery(t *testing.T) {
 				m := newMockUpstream(mockHandler)
 				defer m.Close()
 				var opts []Option
-
-				if tc.errorOnReplace {
-					opts = append(opts, WithErrorOnReplace())
-				}
-				if tc.regexMatch {
-					opts = append(opts, WithRegexMatch())
-				}
 
 				var labelEnforcer ExtractLabeler
 				if len(tc.staticLabelVal) > 0 {

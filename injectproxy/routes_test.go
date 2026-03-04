@@ -699,6 +699,51 @@ func TestRequestOverride(t *testing.T) {
 	}
 }
 
+func TestWithErrorHandler(t *testing.T) {
+	m := newMockUpstream(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Write(okResponse)
+	}))
+	upstream := m.url
+	m.Close()
+
+	called := false
+	proxyErrorHandler := func(w http.ResponseWriter, req *http.Request, err error) {
+		called = true
+		http.Error(w, "custom proxy error", http.StatusBadGateway)
+	}
+
+	r, err := NewRoutes(
+		upstream,
+		StaticLabelEnforcer{LabelName: proxyLabel, Values: []string{"default"}},
+		WithErrorHandler(proxyErrorHandler),
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "http://prometheus.example.com/api/v1/query?query=up", nil)
+
+	r.ServeHTTP(w, req)
+
+	resp := w.Result()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if !called {
+		t.Fatal("expected custom error handler to be called")
+	}
+	if resp.StatusCode != http.StatusBadGateway {
+		t.Fatalf("unexpected status code: %d", resp.StatusCode)
+	}
+	if !strings.Contains(string(body), "custom proxy error") {
+		t.Fatalf("unexpected response body: %q", string(body))
+	}
+}
+
 func TestSeriesWithPost(t *testing.T) {
 	for _, tc := range []struct {
 		name          string

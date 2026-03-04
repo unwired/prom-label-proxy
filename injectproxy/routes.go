@@ -52,6 +52,7 @@ type options struct {
 	registerer         prometheus.Registerer
 	pathPrefix         string
 	modifyProxyRequest func(*http.Request)
+	proxyErrorHandler  func(http.ResponseWriter, *http.Request, error)
 }
 
 type Option interface {
@@ -98,6 +99,13 @@ func WithPathPrefix(pathPrefix string) Option {
 func WithModifyProxyRequest(f func(*http.Request)) Option {
 	return optionFunc(func(o *options) {
 		o.modifyProxyRequest = f
+	})
+}
+
+// WithErrorHandler allows to override the reverse proxy error handler.
+func WithErrorHandler(f func(http.ResponseWriter, *http.Request, error)) Option {
+	return optionFunc(func(o *options) {
+		o.proxyErrorHandler = f
 	})
 }
 
@@ -298,6 +306,10 @@ func NewRoutes(upstream *url.URL, extractLabeler ExtractLabeler, opts ...Option)
 			}
 			originalDirector(r)
 		}
+	}
+
+	if opt.proxyErrorHandler != nil {
+		proxy.ErrorHandler = opt.proxyErrorHandler
 	}
 
 	r := &routes{

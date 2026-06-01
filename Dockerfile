@@ -1,4 +1,4 @@
-FROM golang:1.21.6-alpine AS golang
+FROM golang:1.26.3-alpine AS golang
 WORKDIR /go/src/github.com/unwired/prom-label-proxy
 COPY . .
 ENV CGO_ENABLED=0

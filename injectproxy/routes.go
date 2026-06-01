@@ -37,6 +37,8 @@ const (
 	matchersParam = "match[]"
 )
 
+var promQLParser = parser.NewParser(parser.Options{})
+
 type routes struct {
 	upstream *url.URL
 	handler  http.Handler
@@ -522,7 +524,7 @@ func enforceQueryValues(e *Enforcer, v url.Values) (values string, noQuery bool,
 	if v.Get(queryParam) == "" {
 		return v.Encode(), false, nil
 	}
-	expr, err := parser.ParseExpr(v.Get(queryParam))
+	expr, err := promQLParser.ParseExpr(v.Get(queryParam))
 	if err != nil {
 		queryParseError := newQueryParseError(err)
 		return "", true, queryParseError
@@ -605,7 +607,7 @@ func injectMatchers(q url.Values, matchers ...*labels.Matcher) error {
 	for _, matcher := range matchers {
 		// Inject label into existing matchers.
 		for _, m := range existingMatchers {
-			ms, err := parser.ParseMetricSelector(m)
+			ms, err := promQLParser.ParseMetricSelector(m)
 			if err != nil {
 				return err
 			}

@@ -322,9 +322,11 @@ var tests = []struct {
 }
 
 func TestEnforceNode(t *testing.T) {
+	promQLParser := parser.NewParser(parser.Options{})
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			e, err := parser.ParseExpr(tc.expression)
+			e, err := promQLParser.ParseExpr(tc.expression)
 			if err != nil {
 				t.Fatal(err)
 			}

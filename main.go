@@ -160,7 +160,7 @@ func main() {
 			}
 			return nil
 		}, func(error) {
-			srv.Close()
+			_ = srv.Close()
 		})
 	}
 
@@ -187,7 +187,7 @@ func main() {
 			}
 			return nil
 		}, func(error) {
-			srv.Close()
+			_ = srv.Close()
 		})
 	}
 

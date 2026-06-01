@@ -562,7 +562,7 @@ func (r *routes) matcher(w http.ResponseWriter, req *http.Request) {
 	// https://github.com/h-otter/prom-label-proxy/tree/a37a998
 	// If the referenced pull request is merged, we can remove this code.
 
-	var query url.Values = req.URL.Query()
+	query := req.URL.Query()
 	var form url.Values
 
 	if req.Method == http.MethodPost {
